@@ -1,0 +1,25 @@
+performExecution: elemToExecute executor: waveExecutor
+	| taskWrapper isUserAssigned |
+	super performExecution: elemToExecute executor: waveExecutor.
+	 
+	waveExecutor processHandler engine loadUserManagement ifNotNil: [ isUserAssigned := self
+				isUserAssigned: elemToExecute user
+				plugin: waveExecutor processHandler engine loadUserManagement ]
+	ifNil: [ 
+		isUserAssigned := OrderedCollection new. ].
+	isUserAssigned size = 0
+		ifFalse: [ ^ self ].
+	taskWrapper := waveExecutor processHandler
+		addTaskToServer: elemToExecute
+		user: 'default'.
+	waveExecutor processHandler engineAnnouncer
+		when: WaveAnnouncer
+		do: [ :a | 
+			a parameter traceCr.
+			waveExecutor taskResult: a parameter.
+			waveExecutor processHandler addDataObjectFromServer: a parameter.
+			waveExecutor processHandler engine server
+				removeTask: taskWrapper
+				user: 'default'.
+			waveExecutor tryToExecuteNext: elemToExecute ].
+	elemToExecute value
